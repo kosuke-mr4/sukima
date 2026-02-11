@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+/* ===== Design Tokens ===== */
+:root {
+  --color-bg: #FFFFFF;
+  --color-text: #111111;
+  --color-text-secondary: #555555;
+  --color-surface: #F5F5F5;
+  --color-border: #E0E0E0;
+  --color-accent-must: #E63946;
+  --color-accent-nice: #457B9D;
+  --color-accent-must-bg: #FEF2F2;
+  --color-accent-nice-bg: #EFF6FF;
+  --color-priority-high: #E63946;
+  --color-priority-medium: #F4A261;
+  --color-priority-low: #6B7280;
+  --color-completed: #9CA3AF;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+
+  --font-sans: "Inter", "Roboto", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+}
+
+[data-theme="dark"] {
+  --color-bg: #121212;
+  --color-text: #EEEEEE;
+  --color-text-secondary: #AAAAAA;
+  --color-surface: #1E1E1E;
+  --color-border: #333333;
+  --color-accent-must: #FF6B6B;
+  --color-accent-nice: #6BA3BE;
+  --color-accent-must-bg: #2A1515;
+  --color-accent-nice-bg: #152530;
+  --color-priority-high: #FF6B6B;
+  --color-priority-medium: #FFB74D;
+  --color-priority-low: #9CA3AF;
+  --color-completed: #6B7280;
+}
+
+/* ===== Base Styles ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ===== Utility: Anti-AI-Slop Overrides ===== */
+/* Enforce sharp, small border-radius globally */
+button,
+input,
+select,
+textarea,
+.card {
+  border-radius: var(--radius-sm);
+}
+
+/* ===== Responsive: Mobile ===== */
+@media (max-width: 768px) {
+  .app-main {
+    flex-direction: column !important;
+    gap: 0 !important;
+    background-color: var(--color-bg) !important;
+  }
+
+  .app-main > div {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .app-main > div:last-child {
+    border-bottom: none;
+  }
+
+  .task-form {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .task-form > div,
+  .task-form > button {
+    width: 100% !important;
+    flex: unset !important;
+    min-width: unset !important;
+  }
+
+  .task-form select,
+  .task-form button[type="submit"] {
+    width: 100%;
+  }
+}
