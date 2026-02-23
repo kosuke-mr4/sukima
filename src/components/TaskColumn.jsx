@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { TaskCard } from './TaskCard'
-import { sortByPriority } from '../services/taskManager'
+import { sortByOrder } from '../services/taskManager'
 
 const CATEGORY_META = {
   must_do: {
@@ -15,18 +15,84 @@ const CATEGORY_META = {
   },
 }
 
-export function TaskColumn({ category, tasks, onToggle, onDelete, onUpdate }) {
+export function TaskColumn({ category, tasks, onToggle, onDelete, onUpdate, onMoveCategory, onReorder }) {
   const [showCompleted, setShowCompleted] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
+  const [dropIndex, setDropIndex] = useState(-1)
   const meta = CATEGORY_META[category]
 
-  const incomplete = sortByPriority(tasks.filter(t => !t.isCompleted))
-  const completed = sortByPriority(tasks.filter(t => t.isCompleted))
+  const incomplete = sortByOrder(tasks.filter(t => !t.isCompleted))
+  const completed = sortByOrder(tasks.filter(t => t.isCompleted))
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOver(true)
+
+    // Calculate drop index from mouse position
+    const listEl = e.currentTarget.querySelector('[data-task-list]')
+    if (!listEl) return
+
+    const cards = Array.from(listEl.querySelectorAll('[data-task-id]'))
+    let newIndex = cards.length
+
+    for (let i = 0; i < cards.length; i++) {
+      const rect = cards[i].getBoundingClientRect()
+      const midY = rect.top + rect.height / 2
+      if (e.clientY < midY) {
+        newIndex = i
+        break
+      }
+    }
+    setDropIndex(newIndex)
+  }
+
+  const handleDragLeave = (e) => {
+    // Only handle if leaving the section (not entering a child)
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragOver(false)
+      setDropIndex(-1)
+    }
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setDragOver(false)
+    setDropIndex(-1)
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'))
+      const { taskId, sourceCategory } = data
+
+      if (sourceCategory !== category) {
+        // Cross-column move
+        onMoveCategory(taskId, category)
+      }
+
+      // Reorder within column (or place at drop position after move)
+      // Use requestAnimationFrame to ensure category update is applied first
+      if (sourceCategory !== category) {
+        requestAnimationFrame(() => {
+          onReorder(taskId, dropIndex >= 0 ? dropIndex : incomplete.length, category)
+        })
+      } else {
+        onReorder(taskId, dropIndex >= 0 ? dropIndex : incomplete.length, category)
+      }
+    } catch {
+      // ignore invalid data
+    }
+  }
 
   return (
     <section
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       style={{
         flex: '1 1 400px',
         minWidth: '320px',
+        transition: 'background-color 0.15s ease',
+        backgroundColor: dragOver ? 'var(--color-accent-' + (category === 'must_do' ? 'must' : 'nice') + '-bg)' : 'transparent',
       }}
     >
       {/* Column header */}
@@ -88,14 +154,16 @@ export function TaskColumn({ category, tasks, onToggle, onDelete, onUpdate }) {
 
       {/* Task list */}
       <div
+        data-task-list
         style={{
           padding: '8px',
           display: 'flex',
           flexDirection: 'column',
           gap: '6px',
+          minHeight: '60px',
         }}
       >
-        {incomplete.length === 0 && !showCompleted && (
+        {incomplete.length === 0 && !showCompleted && !dragOver && (
           <p
             style={{
               padding: '24px 16px',
@@ -107,16 +175,37 @@ export function TaskColumn({ category, tasks, onToggle, onDelete, onUpdate }) {
             タスクがありません
           </p>
         )}
-        {incomplete.map(task => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            onToggle={onToggle}
-            onDelete={onDelete}
-            onUpdate={onUpdate}
-          />
+        {incomplete.map((task, index) => (
+          <>
+            {dropIndex === index && dragOver && (
+              <div
+                style={{
+                  height: '3px',
+                  backgroundColor: meta.accent,
+                  borderRadius: '2px',
+                  margin: '-3px 0',
+                }}
+              />
+            )}
+            <TaskCard
+              key={task.id}
+              task={task}
+              onToggle={onToggle}
+              onDelete={onDelete}
+              onUpdate={onUpdate}
+            />
+          </>
         ))}
-        {showCompleted && completed.map(task => (
+        {dropIndex >= incomplete.length && dragOver && (
+          <div
+            style={{
+              height: '3px',
+              backgroundColor: meta.accent,
+              borderRadius: '2px',
+            }}
+          />
+        )}
+        {showCompleted && completed.map((task, index) => (
           <TaskCard
             key={task.id}
             task={task}

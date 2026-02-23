@@ -19,6 +19,7 @@ export function createTask({ title, description = '', category = 'must_do', prio
     category,
     priority,
     isCompleted: false,
+    sortOrder: now,
     createdAt: now,
     updatedAt: now,
   }

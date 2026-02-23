@@ -4,7 +4,7 @@ import { Header } from './components/Header'
 import { TaskForm } from './components/TaskForm'
 import { TaskColumn } from './components/TaskColumn'
 import { loadTasks, saveTasks } from './services/storage'
-import { addTask, updateTask, deleteTask, toggleComplete, filterByCategory } from './services/taskManager'
+import { addTask, updateTask, deleteTask, toggleComplete, filterByCategory, moveToCategory, reorderTask } from './services/taskManager'
 
 export function App() {
   const { theme, toggleTheme } = useTheme()
@@ -29,6 +29,14 @@ export function App() {
 
   const handleUpdate = (id, updates) => {
     setTasks(prev => updateTask(prev, id, updates))
+  }
+
+  const handleMoveCategory = (id, newCategory) => {
+    setTasks(prev => moveToCategory(prev, id, newCategory))
+  }
+
+  const handleReorder = (id, newIndex, category) => {
+    setTasks(prev => reorderTask(prev, id, newIndex, category))
   }
 
   const mustDoTasks = filterByCategory(tasks, 'must_do')
@@ -67,6 +75,8 @@ export function App() {
             onToggle={handleToggle}
             onDelete={handleDelete}
             onUpdate={handleUpdate}
+            onMoveCategory={handleMoveCategory}
+            onReorder={handleReorder}
           />
         </div>
         <div
@@ -82,6 +92,8 @@ export function App() {
             onToggle={handleToggle}
             onDelete={handleDelete}
             onUpdate={handleUpdate}
+            onMoveCategory={handleMoveCategory}
+            onReorder={handleReorder}
           />
         </div>
       </main>

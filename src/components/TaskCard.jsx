@@ -12,6 +12,7 @@ export function TaskCard({ task, onToggle, onDelete, onUpdate }) {
   const [editTitle, setEditTitle] = useState(task.title)
   const [editDescription, setEditDescription] = useState(task.description)
   const [editPriority, setEditPriority] = useState(task.priority)
+  const [isDragging, setIsDragging] = useState(false)
 
   const handleSave = () => {
     if (!editTitle.trim()) return
@@ -28,6 +29,19 @@ export function TaskCard({ task, onToggle, onDelete, onUpdate }) {
     setEditDescription(task.description)
     setEditPriority(task.priority)
     setEditing(false)
+  }
+
+  const handleDragStart = (e) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      taskId: task.id,
+      sourceCategory: task.category,
+    }))
+    e.dataTransfer.effectAllowed = 'move'
+    setIsDragging(true)
+  }
+
+  const handleDragEnd = () => {
+    setIsDragging(false)
   }
 
   if (editing) {
@@ -119,6 +133,10 @@ export function TaskCard({ task, onToggle, onDelete, onUpdate }) {
   return (
     <div
       className="card"
+      draggable="true"
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      data-task-id={task.id}
       style={{
         padding: '10px 12px',
         border: '1px solid var(--color-border)',
@@ -126,8 +144,9 @@ export function TaskCard({ task, onToggle, onDelete, onUpdate }) {
         display: 'flex',
         alignItems: 'flex-start',
         gap: '10px',
-        opacity: task.isCompleted ? 0.55 : 1,
-        transition: 'opacity 0.15s ease',
+        opacity: isDragging ? 0.4 : task.isCompleted ? 0.55 : 1,
+        cursor: 'grab',
+        transition: 'opacity 0.15s ease, box-shadow 0.15s ease',
       }}
     >
       {/* Checkbox */}
@@ -194,7 +213,7 @@ export function TaskCard({ task, onToggle, onDelete, onUpdate }) {
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '3px', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         <button
           onClick={() => setEditing(true)}
           style={{
