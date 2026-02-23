@@ -57,6 +57,7 @@ export function App() {
         <div
           style={{
             flex: 1,
+            minWidth: 0,
             backgroundColor: 'var(--color-bg)',
           }}
         >
@@ -71,6 +72,7 @@ export function App() {
         <div
           style={{
             flex: 1,
+            minWidth: 0,
             backgroundColor: 'var(--color-bg)',
           }}
         >
