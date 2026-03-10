@@ -15,7 +15,28 @@ const CATEGORY_META = {
   },
 }
 
-export function TaskColumn({ category, tasks, onToggle, onDelete, onUpdate, onMoveCategory, onReorder }) {
+/**
+ * ドロップ位置のインデックスをマウス座標から計算する
+ */
+function calcDropIndex(sectionEl, clientY) {
+  const listEl = sectionEl.querySelector('[data-task-list]')
+  if (!listEl) return 0
+
+  const cards = Array.from(listEl.querySelectorAll('[data-task-id]'))
+  let index = cards.length
+
+  for (let i = 0; i < cards.length; i++) {
+    const rect = cards[i].getBoundingClientRect()
+    const midY = rect.top + rect.height / 2
+    if (clientY < midY) {
+      index = i
+      break
+    }
+  }
+  return index
+}
+
+export function TaskColumn({ category, tasks, onToggle, onDelete, onUpdate, onMoveAndReorder, onReorder }) {
   const [showCompleted, setShowCompleted] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [dropIndex, setDropIndex] = useState(-1)
@@ -29,21 +50,7 @@ export function TaskColumn({ category, tasks, onToggle, onDelete, onUpdate, onMo
     e.dataTransfer.dropEffect = 'move'
     setDragOver(true)
 
-    // Calculate drop index from mouse position
-    const listEl = e.currentTarget.querySelector('[data-task-list]')
-    if (!listEl) return
-
-    const cards = Array.from(listEl.querySelectorAll('[data-task-id]'))
-    let newIndex = cards.length
-
-    for (let i = 0; i < cards.length; i++) {
-      const rect = cards[i].getBoundingClientRect()
-      const midY = rect.top + rect.height / 2
-      if (e.clientY < midY) {
-        newIndex = i
-        break
-      }
-    }
+    const newIndex = calcDropIndex(e.currentTarget, e.clientY)
     setDropIndex(newIndex)
   }
 
@@ -57,6 +64,10 @@ export function TaskColumn({ category, tasks, onToggle, onDelete, onUpdate, onMo
 
   const handleDrop = (e) => {
     e.preventDefault()
+
+    // ドロップ位置をイベントから直接計算（ステートに依存しない）
+    const calculatedIndex = calcDropIndex(e.currentTarget, e.clientY)
+
     setDragOver(false)
     setDropIndex(-1)
 
@@ -65,18 +76,11 @@ export function TaskColumn({ category, tasks, onToggle, onDelete, onUpdate, onMo
       const { taskId, sourceCategory } = data
 
       if (sourceCategory !== category) {
-        // Cross-column move
-        onMoveCategory(taskId, category)
-      }
-
-      // Reorder within column (or place at drop position after move)
-      // Use requestAnimationFrame to ensure category update is applied first
-      if (sourceCategory !== category) {
-        requestAnimationFrame(() => {
-          onReorder(taskId, dropIndex >= 0 ? dropIndex : incomplete.length, category)
-        })
+        // カラム間移動：カテゴリ変更と並べ替えをアトミックに実行
+        onMoveAndReorder(taskId, category, calculatedIndex)
       } else {
-        onReorder(taskId, dropIndex >= 0 ? dropIndex : incomplete.length, category)
+        // 同一カラム内の並べ替え
+        onReorder(taskId, calculatedIndex, category)
       }
     } catch {
       // ignore invalid data

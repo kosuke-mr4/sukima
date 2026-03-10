@@ -82,8 +82,8 @@ export function moveToCategory(tasks, id, newCategory) {
  * @param {string} category - 対象カテゴリ
  */
 export function reorderTask(tasks, id, newIndex, category) {
-  // 対象カテゴリのタスクを sortOrder 順で取得
-  const categoryTasks = sortByOrder(tasks.filter(t => t.category === category))
+  // 対象カテゴリの未完了タスクを sortOrder 順で取得
+  const categoryTasks = sortByOrder(tasks.filter(t => t.category === category && !t.isCompleted))
   
   // 移動対象を除外
   const without = categoryTasks.filter(t => t.id !== id)
@@ -106,4 +106,18 @@ export function reorderTask(tasks, id, newIndex, category) {
     const update = reordered.get(task.id)
     return update ? { ...task, ...update } : task
   })
+}
+
+/**
+ * カテゴリ移動と並べ替えをアトミックに実行する（不変）
+ * @param {Array} tasks - 全タスク
+ * @param {string} id - 移動するタスクのID
+ * @param {string} newCategory - 移動先カテゴリ
+ * @param {number} newIndex - 移動先カテゴリ内での新しいインデックス（0始まり）
+ */
+export function moveAndReorderTask(tasks, id, newCategory, newIndex) {
+  // まずカテゴリを変更
+  const moved = moveToCategory(tasks, id, newCategory)
+  // 変更後の状態で並べ替え
+  return reorderTask(moved, id, newIndex, newCategory)
 }

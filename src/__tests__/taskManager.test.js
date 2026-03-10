@@ -10,6 +10,7 @@ import {
   sortByOrder,
   moveToCategory,
   reorderTask,
+  moveAndReorderTask,
 } from '../services/taskManager'
 
 function makeTasks() {
@@ -266,5 +267,35 @@ describe('reorderTask', () => {
     ]
     const result = reorderTask(tasks, 'nonexistent', 0, 'must_do')
     expect(result).toEqual(tasks)
+  })
+})
+
+describe('moveAndReorderTask', () => {
+  it('should move task to different category and insert at new index', () => {
+    const tasks = [
+      { id: 'a', category: 'must_do', sortOrder: 0 },
+      { id: 'b', category: 'must_do', sortOrder: 1 },
+      { id: 'x', category: 'nice_to_have', sortOrder: 0 },
+      { id: 'y', category: 'nice_to_have', sortOrder: 1 },
+    ]
+    
+    // Move 'b' to 'nice_to_have' at index 1 (between x and y)
+    const result = moveAndReorderTask(tasks, 'b', 'nice_to_have', 1)
+    
+    // Check moved task
+    const moved = result.find(t => t.id === 'b')
+    expect(moved.category).toBe('nice_to_have')
+    
+    // Check new order in target category
+    const niceTasks = result.filter(t => t.category === 'nice_to_have').sort((a, b) => a.sortOrder - b.sortOrder)
+    expect(niceTasks).toHaveLength(3)
+    expect(niceTasks[0].id).toBe('x')
+    expect(niceTasks[1].id).toBe('b')
+    expect(niceTasks[2].id).toBe('y')
+    
+    // Check old category
+    const mustTasks = result.filter(t => t.category === 'must_do')
+    expect(mustTasks).toHaveLength(1)
+    expect(mustTasks[0].id).toBe('a')
   })
 })
